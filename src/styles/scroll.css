@@ -1,0 +1,44 @@
+body {
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+  position: relative;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Отключаем автоматическую прокрутку в Chrome */
+body * {
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Скрываем scrollbar для Chrome */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Скрываем scrollbar для Firefox */
+* {
+  scrollbar-width: none;
+}
+
+.thumb-vertical {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.thumb-vertical:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Предотвращаем автоматическую прокрутку в Chrome на Android */
+@media screen and (max-width: 768px) {
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+}

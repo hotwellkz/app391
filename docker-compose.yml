@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  whatsapp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp-server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - WHATSAPP_SESSION_PATH=/app/data/.wwebjs_auth
+      - CHROME_FLAGS=--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --single-process --no-zygote
+      - CHROME_DEVEL_SANDBOX=false
+      - CHROME_NO_SANDBOX=true
+      - DISPLAY=:99
+      - PUPPETEER_DISABLE_HEADLESS_WARNING=true
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data:rw
+    networks:
+      - whatsapp-network
+    # ЭКСТРЕМАЛЬНЫЕ настройки для максимальной стабильности
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    shm_size: 4g  # Увеличиваем shared memory до 4GB
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 65536
+        hard: 65536
+    mem_limit: 3g  # Увеличиваем лимит памяти до 3GB
+    mem_reservation: 2g
+    cpus: '2.0'  # Увеличиваем CPU до 2 ядер
+    oom_kill_disable: true
+    privileged: false  # Используем capabilities вместо privileged
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=1g
+      - /var/tmp:rw,noexec,nosuid,size=500m
+      - /dev/shm:rw,nosuid,nodev,exec,size=4g
+    sysctls:
+      - net.ipv4.ip_unprivileged_port_start=0
+      - kernel.shm_rmid_forced=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "exit", "1"]
+      interval: 45s
+      timeout: 30s
+      retries: 5
+      start_period: 120s  # Увеличиваем время ожидания запуска
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+      restart_policy:
+        condition: unless-stopped
+        delay: 30s
+        max_attempts: 10
+        window: 300s
+
+networks:
+  whatsapp-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: whatsapp-br
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.driver.mtu: 1500 

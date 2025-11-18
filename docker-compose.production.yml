@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  whatsapp-backend:
+    build:
+      context: ./whatsapp-server
+      dockerfile: Dockerfile
+    container_name: whatsapp-backend-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+      - WHATSAPP_SESSION_PATH=/app/data/.wwebjs_auth
+      - CHROME_FLAGS=--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --single-process --no-zygote
+      - CHROME_DEVEL_SANDBOX=false
+      - CHROME_NO_SANDBOX=true
+      - DISPLAY=:99
+      - PUPPETEER_DISABLE_HEADLESS_WARNING=true
+      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data:rw
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    networks:
+      - backend-network
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    shm_size: 4g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 65536
+        hard: 65536
+    mem_limit: 3g
+    mem_reservation: 2g
+    cpus: '2.0'
+    oom_kill_disable: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=1g
+      - /var/tmp:rw,noexec,nosuid,size=500m
+      - /dev/shm:rw,nosuid,nodev,exec,size=4g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whatsapp.rule=Host(`your-domain.com`)"
+      - "traefik.http.routers.whatsapp.tls=true"
+      - "traefik.http.routers.whatsapp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.whatsapp.loadbalancer.server.port=3000"
+
+volumes:
+  whatsapp-auth-prod:
+    driver: local
+  whatsapp-cache-prod:
+    driver: local
+  whatsapp-data-prod:
+    driver: local
+
+networks:
+  backend-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: backend-br
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.driver.mtu: 1500 

@@ -1,0 +1,23 @@
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.comment-icon-active {
+  color: #ef4444; /* красный цвет */
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.comment-icon-active:hover {
+  color: #dc2626; /* темно-красный при наведении */
+}

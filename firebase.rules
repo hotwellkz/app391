@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      // Разрешаем чтение всем
+      allow read: if true;
+      
+      // Разрешаем запись с проверкой размера и типа файла
+      allow write: if request.resource.size < 100 * 1024 * 1024
+                   && (request.resource.contentType.matches('image/.*') ||
+                       request.resource.contentType.matches('video/.*') ||
+                       request.resource.contentType.matches('application/pdf') ||
+                       request.resource.contentType.matches('application/msword') ||
+                       request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document') ||
+                       request.resource.contentType.matches('application/vnd.ms-excel') ||
+                       request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+      
+      // Разрешаем удаление
+      allow delete: if true;
+    }
+  }
+}
